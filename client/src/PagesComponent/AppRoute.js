@@ -1,7 +1,9 @@
 import React from "react";
 import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
+import axios from "axios";
 //import Typography from "@material-ui/core/Typography";
+import TextField from "@material-ui/core/TextField";
 import { withStyles } from "@material-ui/core/styles";
 import Button from "@material-ui/core/Button";
 import MenuIcon from "@material-ui/icons/Menu";
@@ -16,13 +18,13 @@ import { EventEmitter } from "../Measur3DComponent/events";
 
 import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
 
-const styles = theme => ({
+const styles = (theme) => ({
   // This group of buttons will be aligned to the right
   rightToolbar: {
     marginLeft: "auto",
-    marginRight: -12
-  }
-})
+    marginRight: -12,
+  },
+});
 
 // eslint-disable-next-line
 import styles_css from "./AppRoute.css";
@@ -34,10 +36,20 @@ class AppRoute extends React.Component {
     this.handleClick = this.handleClick.bind(this);
     this.handleClose = this.handleClose.bind(this);
     this.showModal = this.showModal.bind(this);
+
+    EventEmitter.subscribe("attObject", (event) => {
+      this.setState({
+        ...this.state,
+        linkToObservation: event["+Dynamizer"].dynamicData.linkToObservation,
+      });
+    });
   }
   // initialize our state
   state = {
-    anchorEl: null
+    anchorEl: null,
+    search: "",
+    linkToObservation: "",
+    observeData: "",
   };
 
   // when component mounts, first thing it does is fetch all existing data in our db
@@ -60,6 +72,33 @@ class AppRoute extends React.Component {
     }
   }
 
+  componentDidUpdate(_, prevState) {
+    if (!this.state.search || prevState.search === this.state.search) return;
+
+    this.getData();
+  }
+
+  getData = async () => {
+    if (!this.state.linkToObservation) return;
+
+    const { data } = await axios.get(this.state.linkToObservation);
+
+    if (!data) return;
+
+    const filteredData = data.filter((dynamicData) =>
+      dynamicData.time.instant.includes(this.state.search.trim())
+    );
+
+    this.setState({
+      ...this.state,
+      observeData: filteredData[0]?.value?.value,
+    });
+
+    EventEmitter.dispatch("updateChart", {
+      searchData: filteredData,
+    });
+  };
+
   handleClick(event) {
     this.setState({ anchorEl: event.currentTarget });
   }
@@ -69,7 +108,7 @@ class AppRoute extends React.Component {
   }
 
   showModal(label) {
-    EventEmitter.dispatch("showModal", {label: label});
+    EventEmitter.dispatch("showModal", { label: label });
   }
 
   // here is our UI
@@ -103,10 +142,27 @@ class AppRoute extends React.Component {
                 </MenuItem>
               </Menu>
               <Dropzone />
+
+              <TextField
+                className="input-search"
+                label="Search for dynamic data"
+                variant="filled"
+                onChange={(evt) =>
+                  this.setState({
+                    ...this.state,
+                    search: evt.target.value,
+                  })
+                }
+              />
+
+              {this.state.observeData ? (
+                <div className="value-chart">{this.state.observeData}</div>
+              ) : undefined}
+
               <div className={classes.rightToolbar}>
-                <Button onClick={() => this.showModal('Models')}>Models</Button>
-                <Button onClick={() => this.showModal('Export')}>Export</Button>
-                <Button onClick={() => this.showModal('GitHub')}>GitHub</Button>
+                <Button onClick={() => this.showModal("Models")}>Models</Button>
+                <Button onClick={() => this.showModal("Export")}>Export</Button>
+                <Button onClick={() => this.showModal("GitHub")}>GitHub</Button>
               </div>
             </Toolbar>
           </AppBar>

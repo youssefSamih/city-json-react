@@ -168,6 +168,8 @@ axios.interceptors.response.use(
     return response;
   },
   (error) => {
+    if (!error || !error?.response) return;
+
     if (error.response.status === 429) {
       EventEmitter.dispatch("error", error.response.data);
     }

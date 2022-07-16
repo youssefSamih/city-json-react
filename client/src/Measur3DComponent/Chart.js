@@ -17,7 +17,7 @@ class Chart extends React.Component {
     EventEmitter.subscribe("updateChart", (event) => this.updateChart(event));
   }
 
-  resetChart = () => {
+  resetChart = (event) => {
     this.setState({
       labels: null,
       label: null,
@@ -26,6 +26,24 @@ class Chart extends React.Component {
   };
 
   updateChart = async (info) => {
+    if (info.searchData) {
+      var labels = [],
+        data = [];
+
+      for (const el in info.searchData) {
+        labels.push(Date(info.searchData[el].time.instant));
+        data.push(info.searchData[el].value.value);
+      }
+
+      this.setState((prevState) => ({
+        ...prevState,
+        labels: labels,
+        label: info.label,
+      }));
+
+      return;
+    }
+
     await axios.get(info.url).then((dataset) => {
       var labels = [],
         data = [];
