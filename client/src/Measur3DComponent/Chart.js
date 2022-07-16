@@ -25,8 +25,8 @@ class Chart extends React.Component {
     });
   };
 
-  updateChart = (info) => {
-    axios.get(info.url).then((dataset) => {
+  updateChart = async (info) => {
+    await axios.get(info.url).then((dataset) => {
       var labels = [],
         data = [];
 

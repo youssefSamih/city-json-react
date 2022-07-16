@@ -29,7 +29,7 @@ import {
   faCar,
   faTrain,
   faDotCircle,
-  faWater
+  faWater,
 } from "@fortawesome/free-solid-svg-icons";
 
 const tableIcons = {
@@ -42,7 +42,7 @@ const tableIcons = {
   )),
   Edit: forwardRef((props, ref) => <Edit {...props} ref={ref} />),
   ThirdStateCheck: forwardRef((props, ref) => <Remove {...props} ref={ref} />),
-  ViewColumn: forwardRef((props, ref) => <ViewColumn {...props} ref={ref} />)
+  ViewColumn: forwardRef((props, ref) => <ViewColumn {...props} ref={ref} />),
 };
 
 class BasicMaterialTable extends React.Component {
@@ -56,28 +56,30 @@ class BasicMaterialTable extends React.Component {
     this.updateTable = this.updateTable.bind(this);
     this.updateTitle = this.updateTitle.bind(this);
 
-    EventEmitter.subscribe("attObject", event => this.updateTable(event));
-    EventEmitter.subscribe("attObjectTitle", event => this.updateTitle(event));
+    EventEmitter.subscribe("attObject", (event) => this.updateTable(event));
+    EventEmitter.subscribe("attObjectTitle", (event) =>
+      this.updateTitle(event)
+    );
   }
 
   state = {
     columns: [
       { title: "Attribute", field: "key" },
-      { title: "Value", field: "value" }
+      { title: "Value", field: "value" },
     ],
     data: [],
     tableTitle: "Object attributes",
-    CityObjectType: null
+    CityObjectType: null,
   };
 
   deleteRows = () => {
-    this.setState(prevState => {
+    this.setState((prevState) => {
       const data = [];
       return { ...prevState, data };
     });
   };
 
-  updateTable = async newData => {
+  updateTable = async (newData) => {
     // delete previous state
     this.deleteRows();
 
@@ -90,11 +92,13 @@ class BasicMaterialTable extends React.Component {
       attribute["value"] = newData[x];
 
       // Dynamizer
-      if (attribute["key"] === '+Dynamizer'){
-        console.log(newData[x].attributeRef.split("./")[1])
-        attribute["key"] = newData[x].attributeRef.split("./")[1]
-        attribute["value"] = 'See Chart on right pane.';
-        EventEmitter.dispatch("updateChart", {label: newData[x].attributeRef.split("./")[1], url: newData[x].dynamicData.linkToObservation});
+      if (attribute["key"] === "+Dynamizer") {
+        attribute["key"] = newData[x].attributeRef.split("/")[3];
+        attribute["value"] = "See Chart on right pane.";
+        EventEmitter.dispatch("updateChart", {
+          label: newData[x].attributeRef.split("./")[1],
+          url: newData[x].dynamicData.linkToObservation,
+        });
       } else {
         EventEmitter.dispatch("resetChart", null);
       }
@@ -102,34 +106,34 @@ class BasicMaterialTable extends React.Component {
       attributes.push(attribute);
     }
 
-    this.setState(prevState => {
+    this.setState((prevState) => {
       var data = [...prevState.data];
       data = data.concat(attributes);
       return { ...prevState, data };
     });
   };
 
-  updateTitle = data => {
+  updateTitle = (data) => {
     if (data == null) {
       this.setState({
         tableTitle: "Object attributes",
-        CityObjectType: null
+        CityObjectType: null,
       });
       return;
     }
 
     this.setState({
       tableTitle: data.title,
-      CityObjectType: data.type
+      CityObjectType: data.type,
     });
   };
 
-  addAttribute = async newData => {
+  addAttribute = async (newData) => {
     await axios.put("http://localhost:3001/measur3d/updateObjectAttribute", {
       key: newData.key,
       value: newData.value,
       uid: this.state.tableTitle,
-      CityObjectType: this.state.CityObjectType
+      CityObjectType: this.state.CityObjectType,
     });
   };
 
@@ -139,16 +143,16 @@ class BasicMaterialTable extends React.Component {
       key: newData.key,
       value: newData.value,
       uid: this.state.tableTitle,
-      CityObjectType: this.state.CityObjectType
+      CityObjectType: this.state.CityObjectType,
     });
   };
 
-  deleteAttribute = async oldData => {
+  deleteAttribute = async (oldData) => {
     await axios.put("http://localhost:3001/measur3d/updateObjectAttribute", {
       key: oldData.key,
       value: "",
       uid: this.state.tableTitle,
-      CityObjectType: this.state.CityObjectType
+      CityObjectType: this.state.CityObjectType,
     });
   };
 
@@ -159,7 +163,7 @@ class BasicMaterialTable extends React.Component {
           search: false,
           paging: false,
           draggable: false,
-          sorting: false
+          sorting: false,
           //maxBodyHeight: 200 As a reminder
         }}
         actions={[
@@ -167,7 +171,7 @@ class BasicMaterialTable extends React.Component {
             icon: tableIcons.Delete,
             tooltip: "Delete object",
             position: "toolbar",
-            onClick: async data => {
+            onClick: async (data) => {
               let confirmDelete = window.confirm("Delete this object?");
 
               if (!confirmDelete) return;
@@ -178,8 +182,8 @@ class BasicMaterialTable extends React.Component {
                 "http://localhost:3001/measur3d/deleteObject",
                 {
                   data: {
-                    uid: this.state.tableTitle
-                  }
+                    uid: this.state.tableTitle,
+                  },
                 }
               );
 
@@ -187,7 +191,7 @@ class BasicMaterialTable extends React.Component {
                 "div > div > span > button"
               );
 
-              action_button.forEach(function(button) {
+              action_button.forEach(function (button) {
                 button.style.visibility = "hidden";
               });
 
@@ -196,8 +200,8 @@ class BasicMaterialTable extends React.Component {
                 ("Object attributes", null)
               );
               EventEmitter.dispatch("attObject", {});
-            }
-          }
+            },
+          },
         ]}
         title={
           <div style={{ display: "flex", alignItems: "center" }}>
@@ -209,8 +213,8 @@ class BasicMaterialTable extends React.Component {
         columns={this.state.columns}
         data={this.state.data}
         editable={{
-          onRowAdd: newData =>
-            new Promise(resolve => {
+          onRowAdd: (newData) => {
+            return new Promise((resolve) => {
               if (!isAllowed(newData.key) || !isAllowed(newData.value)) {
                 EventEmitter.dispatch(
                   "error",
@@ -221,15 +225,16 @@ class BasicMaterialTable extends React.Component {
               this.addAttribute(newData);
               setTimeout(() => {
                 resolve();
-                this.setState(prevState => {
+                this.setState((prevState) => {
                   const data = [...prevState.data];
                   data.push(newData);
                   return { ...prevState, data };
                 });
               }, 500);
-            }),
+            });
+          },
           onRowUpdate: (newData, oldData) =>
-            new Promise(resolve => {
+            new Promise((resolve) => {
               if (!isAllowed(newData.key) || !isAllowed(newData.value)) {
                 EventEmitter.dispatch(
                   "error",
@@ -241,7 +246,7 @@ class BasicMaterialTable extends React.Component {
               setTimeout(() => {
                 resolve();
                 if (oldData) {
-                  this.setState(prevState => {
+                  this.setState((prevState) => {
                     const data = [...prevState.data];
                     data[data.indexOf(oldData)] = newData;
                     return { ...prevState, data };
@@ -249,18 +254,18 @@ class BasicMaterialTable extends React.Component {
                 }
               }, 500);
             }),
-          onRowDelete: oldData =>
-            new Promise(resolve => {
+          onRowDelete: (oldData) =>
+            new Promise((resolve) => {
               this.deleteAttribute(oldData);
               setTimeout(() => {
                 resolve();
-                this.setState(prevState => {
+                this.setState((prevState) => {
                   const data = [...prevState.data];
                   data.splice(data.indexOf(oldData), 1);
                   return { ...prevState, data };
                 });
               }, 500);
-            })
+            }),
         }}
       />
     );
